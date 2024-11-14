@@ -2,23 +2,23 @@
 import React from "react";
 
 function MainComponent() {
-  const [swapFrom, setSwapFrom] = useState("MATIC");
-  const [swapTo, setSwapTo] = useState("USDC");
-  const [amount, setAmount] = useState("");
-  const [receiving, setReceiving] = useState("");
-  const [account, setAccount] = useState("");
-  const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("swap");
-  const [orderType, setOrderType] = useState("buy");
-  const [price, setPrice] = useState("");
-  const [orderAmount, setOrderAmount] = useState("");
-  const [selectedGas, setSelectedGas] = useState("normal");
-  const [gasOptions] = useState({
+  const [swapFrom, setSwapFrom] = React.useState("MATIC");
+  const [swapTo, setSwapTo] = React.useState("USDC");
+  const [amount, setAmount] = React.useState("");
+  const [receiving, setReceiving] = React.useState("");
+  const [account, setAccount] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [activeTab, setActiveTab] = React.useState("swap");
+  const [orderType, setOrderType] = React.useState("buy");
+  const [price, setPrice] = React.useState("");
+  const [orderAmount, setOrderAmount] = React.useState("");
+  const [selectedGas, setSelectedGas] = React.useState("normal");
+  const [gasOptions] = React.useState({
     slow: { price: "30", time: "5-10 min", selected: false },
     normal: { price: "45", time: "2-5 min", selected: true },
     fast: { price: "60", time: "30sec-2min", selected: false },
   });
-  const [orders, setOrders] = useState({
+  const [orders, setOrders] = React.useState({
     buy: [
       { price: "1950.00", amount: "0.5", total: "975.00" },
       { price: "1945.00", amount: "1.2", total: "2334.00" },
@@ -33,15 +33,15 @@ function MainComponent() {
 
   const checkIfWalletIsConnected = async () => {
     try {
-      if (window.ethereum) {
-        const accounts = await window.ethereum.request({
-          method: "eth_accounts",
-        });
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          await switchToPolygon();
-          setError("");
-        }
+      const ethereum = typeof window !== "undefined" ? window.ethereum : null;
+      if (!ethereum) return;
+      const accounts = await ethereum.request({
+        method: "eth_accounts",
+      });
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        await switchToPolygon();
+        setError("");
       }
     } catch (err) {
       console.error("Error checking wallet connection:", err);
@@ -50,14 +50,19 @@ function MainComponent() {
 
   const switchToPolygon = async () => {
     try {
-      await window.ethereum.request({
+      const ethereum = typeof window !== "undefined" ? window.ethereum : null;
+      if (!ethereum) return;
+      await ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x89" }], // Polygon Mainnet
+        params: [{ chainId: "0x89" }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
         try {
-          await window.ethereum.request({
+          const ethereum =
+            typeof window !== "undefined" ? window.ethereum : null;
+          if (!ethereum) return;
+          await ethereum.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -83,21 +88,22 @@ function MainComponent() {
   };
 
   const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setAccount(accounts[0]);
-        await switchToPolygon();
-        setError("");
-      } catch (err) {
-        setError("Failed to connect wallet");
+    const ethereum = typeof window !== "undefined" ? window.ethereum : null;
+    if (!ethereum) {
+      if (typeof window !== "undefined") {
+        window.location.href = `https://metamask.app.link/dapp/${window.location.href}`;
       }
-    } else if (window.location.href.includes("https://metamask.app.link")) {
-      setError("Please use MetaMask browser menu to connect");
-    } else {
-      window.location.href = `https://metamask.app.link/dapp/${window.location.href}`;
+      return;
+    }
+    try {
+      const accounts = await ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      setAccount(accounts[0]);
+      await switchToPolygon();
+      setError("");
+    } catch (err) {
+      setError("Failed to connect wallet");
     }
   };
 
@@ -139,11 +145,13 @@ function MainComponent() {
     setOrderAmount("");
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
     setReceiving(calculateReceiving(amount));
   }, [amount]);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
     checkIfWalletIsConnected();
   }, []);
 
